@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.32228.343
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Georg_Cloud_Home_Assignment", "Georg_Cloud_Home_Assignment\Georg_Cloud_Home_Assignment.csproj", "{547FCCEA-B875-4A1B-BFE1-C64A215DB0FB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{547FCCEA-B875-4A1B-BFE1-C64A215DB0FB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{547FCCEA-B875-4A1B-BFE1-C64A215DB0FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{547FCCEA-B875-4A1B-BFE1-C64A215DB0FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{547FCCEA-B875-4A1B-BFE1-C64A215DB0FB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {26F684E8-C24C-43D5-A698-31D3FF027F91}
+	EndGlobalSection
+EndGlobal
