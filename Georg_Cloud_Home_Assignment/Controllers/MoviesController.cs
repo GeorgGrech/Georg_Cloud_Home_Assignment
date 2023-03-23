@@ -57,5 +57,15 @@ namespace Georg_Cloud_Home_Assignment.Controllers
             }
             return View();
         }
+
+
+        [Authorize]
+        public IActionResult Index()
+        {
+            Task<List<Movie>> t = fmr.GetMovies();
+
+            var list = t.Result;
+            return View(list);
+        }
     }
 }
