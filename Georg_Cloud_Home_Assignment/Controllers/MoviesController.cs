@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,6 +9,7 @@ namespace Georg_Cloud_Home_Assignment.Controllers
 {
     public class MoviesController : Controller
     {
+        [Authorize]
         public IActionResult Create()
         {
             return View();

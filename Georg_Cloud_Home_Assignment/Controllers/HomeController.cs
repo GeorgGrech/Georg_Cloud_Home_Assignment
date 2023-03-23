@@ -1,4 +1,6 @@
 ﻿using Georg_Cloud_Home_Assignment.Models;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
@@ -26,6 +28,13 @@ namespace Georg_Cloud_Home_Assignment.Controllers
         public IActionResult Create()
         {
             return View();
+        }
+
+        [Authorize] //authorize protects the method by denying access to anonymous users
+        public async Task<IActionResult> SignOut()
+        {
+            await HttpContext.SignOutAsync();
+            return RedirectToAction("Index");
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
