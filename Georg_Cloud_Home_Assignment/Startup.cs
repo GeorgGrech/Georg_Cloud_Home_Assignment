@@ -1,3 +1,4 @@
+using Georg_Cloud_Home_Assignment.DataAccess;
 using Google.Cloud.SecretManager.V1;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
@@ -62,6 +63,11 @@ namespace Georg_Cloud_Home_Assignment
             });
 
             services.AddControllersWithViews();
+
+
+            FirestoreMovieRepository fmr = new FirestoreMovieRepository(project);
+            services.AddScoped<FirestoreMovieRepository>(provider => fmr);
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
