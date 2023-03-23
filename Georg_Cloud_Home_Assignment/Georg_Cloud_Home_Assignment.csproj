@@ -3,10 +3,23 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <CopyRefAssembliesToPublishDirectory>false</CopyRefAssembliesToPublishDirectory>
+    <UserSecretsId>8731d5b4-2e00-4528-83d3-d85df79cb0ce</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Google.Cloud.Firestore" Version="3.1.0" />
+    <PackageReference Include="Google.Cloud.Firestore.V1" Version="3.1.0" />
+    <PackageReference Include="Google.Cloud.PubSub.V1" Version="3.4.0" />
+    <PackageReference Include="Google.Cloud.SecretManager.V1" Version="2.1.0" />
+    <PackageReference Include="Google.Cloud.Storage.V1" Version="4.4.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="3.1.32" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="3.1.32" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.5" />
+    <PackageReference Include="StackExchange.Redis" Version="2.6.96" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="DataAccess\" />
   </ItemGroup>
 
 </Project>

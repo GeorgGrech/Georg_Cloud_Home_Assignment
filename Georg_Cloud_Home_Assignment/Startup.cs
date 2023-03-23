@@ -1,9 +1,13 @@
+using Google.Cloud.SecretManager.V1;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,8 +17,9 @@ namespace Georg_Cloud_Home_Assignment
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        public Startup(IConfiguration configuration, IWebHostEnvironment host)
         {
+            System.Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", host.ContentRootPath + "\\georg-cloud-home-assignment-37ae86e05b4c.json");
             Configuration = configuration;
         }
 
@@ -23,6 +28,39 @@ namespace Georg_Cloud_Home_Assignment
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            string project = Configuration["project"];
+            //oauth_secretket
+
+            // Create the client.
+            SecretManagerServiceClient client = SecretManagerServiceClient.Create();
+
+            // Build the resource name.
+            SecretVersionName secretVersionName = new SecretVersionName(project, "oauth_secretkey", "1");
+
+            // Call the API.
+            AccessSecretVersionResponse result = client.AccessSecretVersion(secretVersionName);
+
+            // Convert the payload to a string. Payloads are bytes by default.
+            String payload = result.Payload.Data.ToStringUtf8();
+
+            var key = JObject.Parse(payload);
+
+            string secretKey = key["Authentication:Google:ClientSecret"].ToString();
+
+
+            services
+            .AddAuthentication(options =>
+            {
+                options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
+            })
+            .AddCookie()
+            .AddGoogle(options =>
+            {
+                options.ClientId = "85580411856-cegfgb3lusgj0paq2dkjlq6mqlkrk96j.apps.googleusercontent.com";
+                options.ClientSecret = secretKey;
+            });
+
             services.AddControllersWithViews();
         }
 
@@ -44,6 +82,7 @@ namespace Georg_Cloud_Home_Assignment
 
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
