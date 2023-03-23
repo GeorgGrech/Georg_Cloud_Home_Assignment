@@ -23,7 +23,7 @@ namespace Georg_Cloud_Home_Assignment.Controllers
             return View();
         }
 
-        public IActionResult Privacy()
+        public IActionResult Create()
         {
             return View();
         }
