@@ -47,13 +47,13 @@ namespace Georg_Cloud_Home_Assignment.Controllers
                 //2) will store the book details/info in the NoSql database (Firestore)
 
                 fmr.AddMovie(m);
-                TempData["success"] = "Book was added successfully";
+                TempData["success"] = "Movie added successfully";
             }
             catch (Exception e)
             {
                 //log the exceptions
                 Console.WriteLine(e);
-                TempData["error"] = "Book was not added";
+                TempData["error"] = "Movie was not added";
             }
             return View();
         }
