@@ -5,9 +5,24 @@
 }
 
 <h1>Upload Movie</h1>
-
 <h4>Movie will be transcribed</h4>
 <hr />
+
+@if (TempData["progress"] != null)
+{
+    <div id="progressBarContainer">
+        <p>
+            @TempData["progressInfo"]
+        </p>
+        <input id="percentagevalue" type="hidden" value="@(TempData["progress"])">
+        <div id="progressbar"></div>
+        <hr />
+    </div>
+}
+
+
+
+
 <div class="row">
     <div class="col-md-4">
         <form asp-action="Create" enctype="multipart/form-data">
@@ -37,6 +52,18 @@
     <a asp-action="Index">Back to List</a>
 </div>
 
-@section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+@section Scripts
+{
+    <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    <script>
+        $(function () {
+            $("#progressbar").progressbar({
+                //value: parseInt($('#percentagevalue').val())
+                value: parseInt($('#percentagevalue').val())
+            });
+        });
+    </script>
 }
