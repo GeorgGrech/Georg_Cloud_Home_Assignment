@@ -37,7 +37,6 @@ namespace Georg_Cloud_Home_Assignment.Controllers
             try
             {
                 string newFilename;
-                //1) ebook is going to be stored in the cloud storage i.e. in the bucket with name msd63a2023ra
                 if (file != null)
                 {
                     var storage = StorageClient.Create();
@@ -52,7 +51,6 @@ namespace Georg_Cloud_Home_Assignment.Controllers
                     m.Link = $"https://storage.googleapis.com/{"georg_movie_app_bucket"}/{newFilename}";
                 }
 
-                //2) will store the book details/info in the NoSql database (Firestore)
 
                 fmr.AddMovie(m);
                 TempData["success"] = "Movie added successfully";
@@ -76,6 +74,29 @@ namespace Georg_Cloud_Home_Assignment.Controllers
             return View(list);
         }
 
+        public async Task<IActionResult> Delete(string id)
+        {
+            try
+            {
+                var movie = await fmr.GetMovie(id);
+                string link = movie.Link; //http://xxxxxxxxx/bucketname/nameOffile.pdf
+
+                var storage = StorageClient.Create();
+                string objectName = System.IO.Path.GetFileName(link);
+                storage.DeleteObject("georg_movie_app_bucket", objectName);
+
+
+                await fmr.DeleteMovie(id);
+                TempData["success"] = "Movie was deleted successfully";
+            }
+            catch (Exception ex)
+            {
+                TempData["error"] = "Movie was not deleted";
+            }
+
+            return RedirectToAction("Index");
+
+        }
 
         void OnUploadProgress(Google.Apis.Upload.IUploadProgress progress)
         {
