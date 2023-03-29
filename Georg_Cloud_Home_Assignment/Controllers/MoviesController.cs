@@ -7,8 +7,12 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Aspose.Drawing;
+using System.Diagnostics;
+using Microsoft.AspNetCore.Hosting;
 
 namespace Georg_Cloud_Home_Assignment.Controllers
 {
@@ -18,9 +22,12 @@ namespace Georg_Cloud_Home_Assignment.Controllers
 
         float uploadMax;
 
-        public MoviesController(FirestoreMovieRepository _fmr)
+
+        private IWebHostEnvironment Environment;
+        public MoviesController(FirestoreMovieRepository _fmr, IWebHostEnvironment _environment)
         {
             fmr = _fmr;
+            Environment = _environment;
         }
 
         [Authorize]
@@ -41,14 +48,36 @@ namespace Georg_Cloud_Home_Assignment.Controllers
                 {
                     var storage = StorageClient.Create();
                     using var fileStream = file.OpenReadStream(); //reads the uploaded file from the server's memory
-                    newFilename = Guid.NewGuid().ToString() + System.IO.Path.GetExtension(file.FileName);
+
+                    string GuidName = Guid.NewGuid().ToString();
+
+                    newFilename = GuidName + System.IO.Path.GetExtension(file.FileName);
 
 
                     uploadMax = fileStream.Length; //Set max to calculate progress bar percentage
                     var progressReporter = new Progress<Google.Apis.Upload.IUploadProgress>(OnUploadProgress);
+
+                    //Upload movie
                     await storage.UploadObjectAsync("georg_movie_app_bucket", newFilename, null, fileStream, progress: progressReporter);
 
-                    m.Link = $"https://storage.googleapis.com/{"georg_movie_app_bucket"}/{newFilename}";
+                    m.LinkToMovie = $"https://storage.googleapis.com/{"georg_movie_app_bucket"}/{newFilename}";
+
+
+                    //Save file locally to extract thumbnail
+                    var filePath = this.Environment.WebRootPath + file.FileName;
+                    using (Stream tempFileStream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await file.CopyToAsync(tempFileStream);
+                    }
+
+                    //Generate thumbnail
+                    Stream tnStream = new MemoryStream();
+                    GenerateThumbnail(filePath, tnStream);
+
+                    //Upload thumbnail
+                    string tnFileName = GuidName + "_tn.png";
+                    await storage.UploadObjectAsync("georg_movie_app_bucket", tnFileName, null, tnStream);
+                    m.LinkToThumbnail = $"https://storage.googleapis.com/{"georg_movie_app_bucket"}/{tnFileName}";
                 }
 
 
@@ -79,10 +108,17 @@ namespace Georg_Cloud_Home_Assignment.Controllers
             try
             {
                 var movie = await fmr.GetMovie(id);
-                string link = movie.Link; //http://xxxxxxxxx/bucketname/nameOffile.pdf
+                string movielink = movie.LinkToMovie; //http://xxxxxxxxx/bucketname/nameOffile.pdf
+                string thumbnailLink = movie.LinkToThumbnail; //http://xxxxxxxxx/bucketname/nameOffile.pdf
 
                 var storage = StorageClient.Create();
-                string objectName = System.IO.Path.GetFileName(link);
+
+                //Delete movie
+                string objectName = System.IO.Path.GetFileName(movielink);
+                storage.DeleteObject("georg_movie_app_bucket", objectName);
+
+                //Delete thumbnail
+                objectName = System.IO.Path.GetFileName(thumbnailLink);
                 storage.DeleteObject("georg_movie_app_bucket", objectName);
 
 
@@ -133,6 +169,29 @@ namespace Georg_Cloud_Home_Assignment.Controllers
             TempData["progress"] = (value/uploadMax)*100;
         }
 
+        /*MemoryStream GenerateThumbnailStream(Stream fileStream)
+        {
+            
+            Bitmap b = 
+            MemoryStream ms = new MemoryStream();
+            b.Save(ms, Aspose.Drawing.Imaging.ImageFormat.Png);
+            return ms;
+        }*/
 
+        void GenerateThumbnail(string filePath, Stream tnStream)
+        {
+            var ffMpeg = new NReco.VideoConverter.FFMpegConverter();
+            ffMpeg.GetVideoThumbnail(filePath, tnStream);
+
+            System.IO.File.Delete(filePath); //Delete now unneeded file from path
+        }
+
+        /*
+        MemoryStream ToMemoryStream(Bitmap b)
+        {
+            MemoryStream ms = new MemoryStream();
+            b.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+            return ms;
+        }*/
     }
 }

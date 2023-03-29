@@ -13,6 +13,9 @@
     <thead>
         <tr>
             <th>
+                Thumbnail
+            </th>
+            <th>
                 @Html.DisplayNameFor(model => model.Id)
             </th>
             <th>
@@ -25,6 +28,9 @@
 @foreach (var item in Model) {
         <tr>
             <td>
+                <img src="@item.LinkToThumbnail" alt="thumbnail" />
+            </td>
+            <td>
                 @Html.DisplayFor(modelItem => item.Id)
             </td>
             <td>
@@ -34,9 +40,17 @@
                 @Html.ActionLink("Edit", "Edit", new { /* id=item.PrimaryKey */ }) |
                 @Html.ActionLink("Details", "Details", new { /* id=item.PrimaryKey */ }) |
                 @Html.ActionLink("Delete", "Delete", new { id = item.Id }) |
-                <a href="@item.Link">Download</a>
+                <a href="@item.LinkToMovie">Download</a>
             </td> 
         </tr>
 }
     </tbody>
 </table>
+
+<style>
+    img {
+        height: 100%;
+        width: auto;
+        max-height: 3.5vw;
+    }
+</style>
