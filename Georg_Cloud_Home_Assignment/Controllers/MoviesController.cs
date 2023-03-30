@@ -51,7 +51,7 @@ namespace Georg_Cloud_Home_Assignment.Controllers
 
                     string GuidName = Guid.NewGuid().ToString();
 
-                    newFilename = GuidName + System.IO.Path.GetExtension(file.FileName);
+                    newFilename = GuidName + Path.GetExtension(file.FileName);
 
 
                     uploadMax = fileStream.Length; //Set max to calculate progress bar percentage
@@ -62,17 +62,8 @@ namespace Georg_Cloud_Home_Assignment.Controllers
 
                     m.LinkToMovie = $"https://storage.googleapis.com/{"georg_movie_app_bucket"}/{newFilename}";
 
-
-                    //Save file locally to extract thumbnail
-                    var filePath = this.Environment.WebRootPath + file.FileName;
-                    using (Stream tempFileStream = new FileStream(filePath, FileMode.Create))
-                    {
-                        await file.CopyToAsync(tempFileStream);
-                    }
-
                     //Generate thumbnail
-                    Stream tnStream = new MemoryStream();
-                    GenerateThumbnail(filePath, tnStream);
+                    Stream tnStream = GenerateThumbnailStream(m.LinkToMovie);
 
                     //Upload thumbnail
                     string tnFileName = GuidName + "_tn.png";
@@ -178,12 +169,13 @@ namespace Georg_Cloud_Home_Assignment.Controllers
             return ms;
         }*/
 
-        void GenerateThumbnail(string filePath, Stream tnStream)
+        Stream GenerateThumbnailStream(string filePath)
         {
+            Stream tnStream = new MemoryStream();
             var ffMpeg = new NReco.VideoConverter.FFMpegConverter();
             ffMpeg.GetVideoThumbnail(filePath, tnStream);
-
-            System.IO.File.Delete(filePath); //Delete now unneeded file from path
+            return tnStream;
+            //System.IO.File.Delete(filePath); //Delete now unneeded file from path
         }
 
         /*
