@@ -10,7 +10,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Aspose.Drawing;
 using System.Diagnostics;
 using Microsoft.AspNetCore.Hosting;
 
@@ -160,15 +159,6 @@ namespace Georg_Cloud_Home_Assignment.Controllers
             TempData["progress"] = (value/uploadMax)*100;
         }
 
-        /*MemoryStream GenerateThumbnailStream(Stream fileStream)
-        {
-            
-            Bitmap b = 
-            MemoryStream ms = new MemoryStream();
-            b.Save(ms, Aspose.Drawing.Imaging.ImageFormat.Png);
-            return ms;
-        }*/
-
         Stream GenerateThumbnailStream(string filePath)
         {
             Stream tnStream = new MemoryStream();
@@ -178,12 +168,5 @@ namespace Georg_Cloud_Home_Assignment.Controllers
             //System.IO.File.Delete(filePath); //Delete now unneeded file from path
         }
 
-        /*
-        MemoryStream ToMemoryStream(Bitmap b)
-        {
-            MemoryStream ms = new MemoryStream();
-            b.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
-            return ms;
-        }*/
     }
 }

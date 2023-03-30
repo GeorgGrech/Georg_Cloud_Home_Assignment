@@ -67,7 +67,7 @@ namespace Georg_Cloud_Home_Assignment
 
             FirestoreMovieRepository fmr = new FirestoreMovieRepository(project);
             services.AddScoped<FirestoreMovieRepository>(provider => fmr);
-
+            services.AddScoped<PubSubRepository>(provider => new PubSubRepository(project));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
