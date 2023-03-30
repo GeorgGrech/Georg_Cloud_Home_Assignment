@@ -13,8 +13,9 @@ namespace SubscriberApp
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        public Startup(IConfiguration configuration, IWebHostEnvironment host)
         {
+            System.Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", host.ContentRootPath + "\\georg-cloud-home-assignment-37ae86e05b4c.json");
             Configuration = configuration;
         }
 
