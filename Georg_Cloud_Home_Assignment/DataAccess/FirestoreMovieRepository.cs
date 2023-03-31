@@ -1,4 +1,4 @@
-﻿using Georg_Cloud_Home_Assignment.Models;
+﻿using Common.Models;
 using Google.Cloud.Firestore;
 using System;
 using System.Collections.Generic;

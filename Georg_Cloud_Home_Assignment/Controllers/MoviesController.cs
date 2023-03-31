@@ -1,5 +1,5 @@
 ﻿using Georg_Cloud_Home_Assignment.DataAccess;
-using Georg_Cloud_Home_Assignment.Models;
+using Common.Models;
 using Google.Cloud.Storage.V1;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
@@ -18,14 +18,16 @@ namespace Georg_Cloud_Home_Assignment.Controllers
     public class MoviesController : Controller
     {
         FirestoreMovieRepository fmr;
+        PubSubRepository psr;
 
         float uploadMax;
 
 
         private IWebHostEnvironment Environment;
-        public MoviesController(FirestoreMovieRepository _fmr, IWebHostEnvironment _environment)
+        public MoviesController(FirestoreMovieRepository _fmr, PubSubRepository _psr, IWebHostEnvironment _environment)
         {
             fmr = _fmr;
+            psr = _psr;
             Environment = _environment;
         }
 
@@ -73,6 +75,7 @@ namespace Georg_Cloud_Home_Assignment.Controllers
 
                 fmr.AddMovie(m);
                 TempData["success"] = "Movie added successfully";
+                psr.PushMessage(m); //Push movie to pubsub
             }
             catch (Exception e)
             {

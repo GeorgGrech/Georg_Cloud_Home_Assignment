@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Georg_Cloud_Home_Assignment.Models
+namespace Common.Models
 {
 
     [FirestoreData] //So that we don't need to store this data formatted as json in Firestore
