@@ -22,6 +22,9 @@ namespace Common.Models
 
         [FirestoreProperty]
         public string LinkToThumbnail { get; set; } //Link to bucket
+
+        [FirestoreProperty]
+        public string LinkToTranscription { get; set; } //Link to bucket
     }
 
 }

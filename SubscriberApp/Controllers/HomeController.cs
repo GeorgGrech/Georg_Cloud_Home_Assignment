@@ -20,7 +20,8 @@ namespace SubscriberApp.Controllers
 
         public IActionResult Index()
         {
-            return View();
+            //return RedirectToAction("Subscriber");
+            return Redirect("Subscriber");
         }
 
         public IActionResult Privacy()

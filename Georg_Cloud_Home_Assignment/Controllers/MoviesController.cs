@@ -52,6 +52,8 @@ namespace Georg_Cloud_Home_Assignment.Controllers
 
                     string GuidName = Guid.NewGuid().ToString();
 
+                    m.Id = GuidName; //Auto Generated ID
+
                     newFilename = GuidName + Path.GetExtension(file.FileName);
 
 
