@@ -12,6 +12,7 @@ using Newtonsoft.Json;
 using Google.Cloud.Storage.V1;
 using System.IO;
 using Google.Cloud.Firestore;
+using Grpc.Core;
 
 namespace SubscriberApp.Controllers
 {
@@ -23,49 +24,47 @@ namespace SubscriberApp.Controllers
             Environment = environment;
         }
 
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
         {
-
-
             bool acknowledge = true; //true - message will be pulled permanently from the queue
                                      //false - message will be restored back into the queue once the deadline of the acknowledgement exceeds
             string projectId = "georg-cloud-home-assignment";
             string subscriptionId = "movie-queue-sub";
 
             SubscriptionName subscriptionName = SubscriptionName.FromProjectSubscription(projectId, subscriptionId);
-            SubscriberClient subscriber = await SubscriberClient.CreateAsync(subscriptionName);
-            // SubscriberClient runs your message handle function on multiple
-            // threads to maximize throughput.
+            SubscriberServiceApiClient subscriberClient = SubscriberServiceApiClient.Create();
             int messageCount = 0;
-            string messageOutput = "";
 
-            Task startTask = subscriber.StartAsync(async (PubsubMessage message, CancellationToken cancel) =>
+            //string messageOutput = "";
+
+            try
             {
-                string text = System.Text.Encoding.UTF8.GetString(message.Data.ToArray());
-
-                //code that sends out the email
-                Movie m = JsonConvert.DeserializeObject<Movie>(text);
-
-                try
+                // Pull messages from server,
+                // allowing an immediate response if there are no messages.
+                PullResponse response = subscriberClient.Pull(subscriptionName, maxMessages: 20);
+                // Print out each received message.
+                foreach (ReceivedMessage msg in response.ReceivedMessages)
                 {
+                    string text = System.Text.Encoding.UTF8.GetString(msg.Message.Data.ToArray());
+                    Movie m = JsonConvert.DeserializeObject<Movie>(text);
+                    Console.WriteLine($"Message {msg.Message.MessageId}: {text}");
+
                     TranscriptionProcess(m);
+
+                    Interlocked.Increment(ref messageCount);
                 }
-                catch (Exception e)
+                // If acknowledgement required, send to server.
+                if (acknowledge && messageCount > 0)
                 {
-                    Console.WriteLine(e);
+                    subscriberClient.Acknowledge(subscriptionName, response.ReceivedMessages.Select(msg => msg.AckId));
                 }
+            }
+            catch (RpcException ex) /*when (ex.Status.StatusCode == StatusCode.Unavailable)*/
+            {
+                Console.WriteLine("Caught exception: " + ex);
+                // UNAVAILABLE due to too many concurrent pull requests pending for the given subscription.
+            }
 
-                //messageOutput += $"Message {message.MessageId}: {text}";
-                Console.WriteLine($"Message {message.MessageId}: {text}");
-                Interlocked.Increment(ref messageCount);
-                return acknowledge ? SubscriberClient.Reply.Ack : SubscriberClient.Reply.Nack;
-            });
-
-            // Run for 5 seconds.
-            await Task.Delay(5000);
-            await subscriber.StopAsync(CancellationToken.None);
-            // Lets make sure that the start task finished successfully after the call to stop.
-            await startTask;
             return Content(messageCount.ToString());
 
         }
@@ -100,7 +99,7 @@ namespace SubscriberApp.Controllers
             }
             catch (Exception e)
             {
-                Console.WriteLine("ranscription unsuccseful. Object most likely deleted. Exception: "+e);
+                Console.WriteLine("Transcription unsuccseful. Object most likely deleted. Exception: "+e);
             }
         }
 
