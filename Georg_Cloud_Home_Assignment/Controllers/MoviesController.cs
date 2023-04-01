@@ -103,19 +103,23 @@ namespace Georg_Cloud_Home_Assignment.Controllers
             try
             {
                 var movie = await fmr.GetMovie(id);
-                string movielink = movie.LinkToMovie; //http://xxxxxxxxx/bucketname/nameOffile.pdf
-                string thumbnailLink = movie.LinkToThumbnail; //http://xxxxxxxxx/bucketname/nameOffile.pdf
+
+                string[] urlsToCheck = {
+                    movie.LinkToMovie,
+                    movie.LinkToThumbnail,
+                    movie.LinkToTranscription
+                };
 
                 var storage = StorageClient.Create();
 
-                //Delete movie
-                string objectName = System.IO.Path.GetFileName(movielink);
-                storage.DeleteObject("georg_movie_app_bucket", objectName);
-
-                //Delete thumbnail
-                objectName = System.IO.Path.GetFileName(thumbnailLink);
-                storage.DeleteObject("georg_movie_app_bucket", objectName);
-
+                foreach(string url in urlsToCheck) //Check every url in movie
+                {
+                    if (url != null) //attempt delete only if not empty
+                    {
+                        string fileName = System.IO.Path.GetFileName(url);
+                        storage.DeleteObject("georg_movie_app_bucket", fileName);
+                    }
+                }
 
                 await fmr.DeleteMovie(id);
                 TempData["success"] = "Movie was deleted successfully";

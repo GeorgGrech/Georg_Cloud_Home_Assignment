@@ -90,11 +90,18 @@ namespace SubscriberApp.Controllers
             string projectId = "georg-cloud-home-assignment";
             FirestoreDb db = FirestoreDb.Create(projectId);
 
-            string flacUrl = await ConvertAndUploadFlac(m.LinkToMovie, bucketName, storage); //Convert, upload Flac, and retrieve Url
+            try
+            {
+                string flacFileName = await ConvertAndUploadFlac(m.LinkToMovie, bucketName, storage); //Convert, upload Flac, and retrieve file name
 
-            Stream transcriptionStream = Transcribe(flacUrl, speech, config);
+                Stream transcriptionStream = Transcribe(flacFileName, bucketName, speech, config, storage);
 
-            UploadTranscription(transcriptionStream, bucketName, storage, m, db);
+                UploadTranscription(transcriptionStream, bucketName, storage, m, db);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("ranscription unsuccseful. Object most likely deleted. Exception: "+e);
+            }
         }
 
 
@@ -109,16 +116,16 @@ namespace SubscriberApp.Controllers
             ffMpeg.ConvertMedia(Environment.WebRootPath + "\\export.wav", flacStream, "flac");
 
             string newFileName = Guid.NewGuid().ToString() + ".flac";
-            await storage.UploadObjectAsync("georg_movie_app_bucket", newFileName, null, flacStream);
+            await storage.UploadObjectAsync(bucketName, newFileName, null, flacStream);
 
             System.IO.File.Delete(Environment.WebRootPath + "\\export.wav"); //Delete now uneccesary wav file
 
-            return $"gs://{bucketName}/{newFileName}"; //return in GCS URL format
+            return newFileName; //return in GCS URL format
         }
 
-        public Stream Transcribe(string flacUrl, SpeechClient speech, RecognitionConfig config)
+        public Stream Transcribe(string flacFileName, string bucketName, SpeechClient speech, RecognitionConfig config, StorageClient storage)
         {
-            var audio = RecognitionAudio.FromStorageUri(flacUrl); //Change to FromStorageUri later
+            var audio = RecognitionAudio.FromStorageUri($"gs://{bucketName}/{flacFileName}");
             var response = speech.Recognize(config, audio);
 
             var stream = new MemoryStream();
@@ -138,6 +145,8 @@ namespace SubscriberApp.Controllers
             writer.Write(transcription);
             writer.Flush();
             stream.Position = 0;
+
+            storage.DeleteObject(bucketName,flacFileName); //Delete now unnecessary flac file
 
             return stream;
         }
