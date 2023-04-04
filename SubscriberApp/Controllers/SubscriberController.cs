@@ -48,10 +48,10 @@ namespace SubscriberApp.Controllers
                     string text = System.Text.Encoding.UTF8.GetString(msg.Message.Data.ToArray());
                     Movie m = JsonConvert.DeserializeObject<Movie>(text);
                     Console.WriteLine($"Message {msg.Message.MessageId}: {text}");
+                    Interlocked.Increment(ref messageCount);
 
                     TranscriptionProcess(m);
 
-                    Interlocked.Increment(ref messageCount);
                 }
                 // If acknowledgement required, send to server.
                 if (acknowledge && messageCount > 0)
@@ -108,18 +108,22 @@ namespace SubscriberApp.Controllers
         public async Task<string> ConvertAndUploadFlac(string inputUrl, string bucketName, StorageClient storage)
         {
             var ffMpeg = new NReco.VideoConverter.FFMpegConverter();
-            ffMpeg.ConvertMedia(inputUrl, Environment.WebRootPath + "\\export.wav", "wav"); //What's the point of this when I can just convert to flac immediately?
+
+            string audioGuid = Guid.NewGuid().ToString();
+            string wavFileName = audioGuid + ".wav"; //Unique id to be used by working audio files
+
+            ffMpeg.ConvertMedia(inputUrl, Environment.WebRootPath + "\\"+wavFileName, "wav"); //What's the point of this when I can just convert to flac immediately?
 
 
             Stream flacStream = new MemoryStream();
-            ffMpeg.ConvertMedia(Environment.WebRootPath + "\\export.wav", flacStream, "flac");
+            ffMpeg.ConvertMedia(Environment.WebRootPath + "\\"+wavFileName, flacStream, "flac");
 
-            string newFileName = Guid.NewGuid().ToString() + ".flac";
-            await storage.UploadObjectAsync(bucketName, newFileName, null, flacStream);
+            string flacFileName = audioGuid + ".flac";
+            await storage.UploadObjectAsync(bucketName, flacFileName, null, flacStream);
 
-            System.IO.File.Delete(Environment.WebRootPath + "\\export.wav"); //Delete now uneccesary wav file
+            System.IO.File.Delete(Environment.WebRootPath + "\\"+wavFileName); //Delete now uneccesary wav file
 
-            return newFileName; //return in GCS URL format
+            return flacFileName; //return in GCS URL format
         }
 
         public Stream Transcribe(string flacFileName, string bucketName, SpeechClient speech, RecognitionConfig config, StorageClient storage)
