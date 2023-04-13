@@ -82,7 +82,8 @@ namespace SubscriberApp.Controllers
                 Encoding = RecognitionConfig.Types.AudioEncoding.Flac,
                 //SampleRateHertz = 16000,
                 AudioChannelCount = 2,
-                LanguageCode = LanguageCodes.English.UnitedStates
+                LanguageCode = LanguageCodes.English.UnitedStates,
+                EnableWordTimeOffsets = true //Enable timing
             };
 
             //Preperation for pt 3 - Upload Transcription
@@ -136,12 +137,23 @@ namespace SubscriberApp.Controllers
 
             string transcription = "";
 
+            int lineNumber = 0;
+
             foreach (var result in response.Results)
             {
                 foreach (var alternative in result.Alternatives)
                 {
+                    lineNumber++;
+
+                    string lineStartTime = alternative.Words[0].StartTime.ToString();
+                    string lineEndTime = alternative.Words[^1].EndTime.ToString();
+
+                    transcription += lineNumber.ToString()+"\n";
+                    transcription += convertToSrtTime(lineStartTime,false) + " --> " + convertToSrtTime(lineEndTime,true) + "\n";
                     //Console.WriteLine(alternative.Transcript);
                     transcription += alternative.Transcript + "\n";
+                    transcription += "\n"; //Skip extra line
+
                 }
             }
 
@@ -158,7 +170,7 @@ namespace SubscriberApp.Controllers
         public async void UploadTranscription(Stream transcriptionStream, string bucketName, StorageClient storage, Movie m, FirestoreDb db)
         {
 
-            string transcriptFileName = m.Id + ".txt"; //Currently saving as txt, later save as .srt
+            string transcriptFileName = m.Id + ".srt";
 
             await storage.UploadObjectAsync("georg_movie_app_bucket", transcriptFileName, null, transcriptionStream);
 
@@ -175,6 +187,35 @@ namespace SubscriberApp.Controllers
             string entryId = allMoviesQuerySnapshot.Documents[0].Id; //Id of entry in Firestore
             DocumentReference docRef = db.Collection("movies").Document(entryId);
             await docRef.SetAsync(m);
+        }
+
+
+
+        private string convertToSrtTime(string time, bool endTime) //Convert Google Speech StartTime/EndTime into srt format
+        {
+            int trailTime = 1; //Amount of seconds subtitle remains on screen after speech finished
+
+            string srtTime = time.Replace("\"", string.Empty).Replace("s", string.Empty); //Removes quotation marks and s
+
+
+            string[] times = srtTime.Split(".");
+            int seconds = int.Parse(times[0]); //Current system only works with seconds, consider rework
+
+            if (endTime)
+                seconds += trailTime;
+
+            if (seconds < 10)
+            {
+                times[0] = "0" + seconds;
+            }
+            else
+            {
+                times[0] = seconds.ToString();
+            }
+
+            srtTime = "00:00:" + times[0]+","+times[1];
+
+            return srtTime;
         }
     }
 }
