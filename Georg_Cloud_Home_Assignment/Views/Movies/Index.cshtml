@@ -34,7 +34,7 @@
                 @Html.ActionLink("Edit", "Edit", new { /* id=item.PrimaryKey */ }) |
                 @Html.ActionLink("Details", "Details", new { /* id=item.PrimaryKey */ }) |
                 @Html.ActionLink("Delete", "Delete", new { id = item.Id }) |
-                <a href="@item.LinkToMovie">Download Movie</a> |
+                @Html.ActionLink("Download Movie", "DownloadMovie", new { id = item.Id }) |
                 <a href="@item.LinkToTranscription">Download Transcription</a>
             </td> 
         </tr>

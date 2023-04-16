@@ -60,5 +60,15 @@ namespace Georg_Cloud_Home_Assignment.DataAccess
             await moviesRef.DeleteAsync();
         }
 
+        public async Task AddDownloadTime (Movie m)
+        {
+            Query allMoviesQuery = db.Collection("movies").WhereEqualTo("Id", m.Id);
+            QuerySnapshot allMoviesQuerySnapshot = await allMoviesQuery.GetSnapshotAsync();
+
+            string entryId = allMoviesQuerySnapshot.Documents[0].Id; //Id of entry in Firestore
+            DocumentReference docRef = db.Collection("movies").Document(entryId);
+            await docRef.SetAsync(m);
+        }
+
     }
 }

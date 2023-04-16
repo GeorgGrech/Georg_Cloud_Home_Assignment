@@ -213,7 +213,10 @@ namespace SubscriberApp.Controllers
                 times[0] = seconds.ToString();
             }
 
-            srtTime = "00:00:" + times[0]+","+times[1];
+            if (times.Length > 1) //If milliseconds available
+                srtTime = "00:00:" + times[0] + "," + times[1];
+            else //if no milliseconds found, e.g time variable is "1s"
+                srtTime = "00:00:" + times[0] + ",000"; 
 
             return srtTime;
         }

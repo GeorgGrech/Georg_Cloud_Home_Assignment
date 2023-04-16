@@ -12,6 +12,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using Microsoft.AspNetCore.Hosting;
+using Google.Cloud.Firestore;
+using Google.Cloud.Firestore.V1;
 
 namespace Georg_Cloud_Home_Assignment.Controllers
 {
@@ -72,6 +74,8 @@ namespace Georg_Cloud_Home_Assignment.Controllers
                     string tnFileName = GuidName + "_tn.png";
                     await storage.UploadObjectAsync("georg_movie_app_bucket", tnFileName, null, tnStream);
                     m.LinkToThumbnail = $"https://storage.googleapis.com/{"georg_movie_app_bucket"}/{tnFileName}";
+
+                    m.DownloadTimes = new List<Timestamp>(); //Create an empty list
                 }
 
 
@@ -175,6 +179,26 @@ namespace Georg_Cloud_Home_Assignment.Controllers
             ffMpeg.GetVideoThumbnail(filePath, tnStream);
             return tnStream;
             //System.IO.File.Delete(filePath); //Delete now unneeded file from path
+        }
+
+        public async Task<IActionResult> DownloadMovie(string id)
+        {
+            try
+            {
+                Movie m = await fmr.GetMovie(id); //Get movie
+                
+                m.DownloadTimes.Add(Timestamp.FromDateTime(DateTime.UtcNow));  //Add current utc dateTime (converted into google timestamp) to list of download times
+
+                await fmr.AddDownloadTime(m); //Update movie to firestore
+
+                return Redirect(m.LinkToMovie); //redirect to Movie Link to download movie
+            }
+            catch (Exception ex)
+            {
+                TempData["error"] = "Download time was not added";
+            }
+
+            return RedirectToAction("Index");
         }
 
     }
