@@ -111,18 +111,13 @@ namespace SubscriberApp.Controllers
             var ffMpeg = new NReco.VideoConverter.FFMpegConverter();
 
             string audioGuid = Guid.NewGuid().ToString();
-            string wavFileName = audioGuid + ".wav"; //Unique id to be used by working audio files
-
-            ffMpeg.ConvertMedia(inputUrl, Environment.WebRootPath + "\\"+wavFileName, "wav"); //What's the point of this when I can just convert to flac immediately?
-
 
             Stream flacStream = new MemoryStream();
-            ffMpeg.ConvertMedia(Environment.WebRootPath + "\\"+wavFileName, flacStream, "flac");
+            ffMpeg.ConvertMedia(inputUrl, flacStream, "flac"); //Skip wav, convert to flac immediately
 
             string flacFileName = audioGuid + ".flac";
             await storage.UploadObjectAsync(bucketName, flacFileName, null, flacStream);
 
-            System.IO.File.Delete(Environment.WebRootPath + "\\"+wavFileName); //Delete now uneccesary wav file
 
             return flacFileName; //return in GCS URL format
         }
