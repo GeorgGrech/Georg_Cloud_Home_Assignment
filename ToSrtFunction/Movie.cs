@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Common.Models
+namespace ToSrtFunction
 {
 
     [FirestoreData] //So that we don't need to store this data formatted as json in Firestore

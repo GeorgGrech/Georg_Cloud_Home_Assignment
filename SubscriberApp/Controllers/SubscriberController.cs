@@ -93,10 +93,10 @@ namespace SubscriberApp.Controllers
             try
             {
                 string flacFileName = await ConvertAndUploadFlac(m.LinkToMovie, bucketName, storage); //Convert, upload Flac, and retrieve file name
+                m.FlacFileName = flacFileName;
+                UpdateFirestore(m, db);
 
-                Stream transcriptionStream = Transcribe(flacFileName, bucketName, speech, config, storage);
-
-                UploadTranscription(transcriptionStream, bucketName, storage, m, db);
+                Redirect("https://us-central1-georg-cloud-home-assignment.cloudfunctions.net/transcribe-srt-function?id=" + m.Id);
             }
             catch (Exception e)
             {
@@ -119,7 +119,7 @@ namespace SubscriberApp.Controllers
             await storage.UploadObjectAsync(bucketName, flacFileName, null, flacStream);
 
 
-            return flacFileName; //return in GCS URL format
+            return flacFileName;
         }
 
         public Stream Transcribe(string flacFileName, string bucketName, SpeechClient speech, RecognitionConfig config, StorageClient storage)
