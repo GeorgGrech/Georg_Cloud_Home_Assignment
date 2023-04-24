@@ -26,7 +26,7 @@ namespace SubscriberApp.Controllers
             Environment = environment;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
             bool acknowledge = true; //true - message will be pulled permanently from the queue
                                      //false - message will be restored back into the queue once the deadline of the acknowledgement exceeds
@@ -34,45 +34,30 @@ namespace SubscriberApp.Controllers
             string subscriptionId = "movie-queue-sub";
 
             SubscriptionName subscriptionName = SubscriptionName.FromProjectSubscription(projectId, subscriptionId);
-            SubscriberServiceApiClient subscriberClient = SubscriberServiceApiClient.Create();
+            SubscriberClient subscriber = await SubscriberClient.CreateAsync(subscriptionName);
             int messageCount = 0;
 
             //string messageOutput = "";
 
-            try
+            Task startTask = subscriber.StartAsync((PubsubMessage message, CancellationToken cancel) =>
             {
-                // Pull messages from server,
-                // allowing an immediate response if there are no messages.
-                PullResponse response = subscriberClient.Pull(subscriptionName, maxMessages: 20);
-                // Print out each received message.
-                foreach (ReceivedMessage msg in response.ReceivedMessages)
-                {
-                    string text = System.Text.Encoding.UTF8.GetString(msg.Message.Data.ToArray());
-                    Movie m = JsonConvert.DeserializeObject<Movie>(text);
-                    Console.WriteLine($"Message {msg.Message.MessageId}: {text}");
-                    Interlocked.Increment(ref messageCount);
+                string text = System.Text.Encoding.UTF8.GetString(message.Data.ToArray());
+                Movie m = JsonConvert.DeserializeObject<Movie>(text);
+                Console.WriteLine($"Message {message.MessageId}: {text}");
+                Interlocked.Increment(ref messageCount);
 
-                    TranscriptionProcess(m);
-
-                }
-                // If acknowledgement required, send to server.
-                if (acknowledge && messageCount > 0)
-                {
-                    Console.WriteLine("Attempting Acknowledge");
-                    subscriberClient.Acknowledge(subscriptionName, response.ReceivedMessages.Select(msg => msg.AckId));
-                }
-            }
-            catch (RpcException ex) /*when (ex.Status.StatusCode == StatusCode.Unavailable)*/
-            {
-                Console.WriteLine("Caught exception: " + ex);
-                // UNAVAILABLE due to too many concurrent pull requests pending for the given subscription.
-            }
+                TranscriptionProcess(m).Wait();
+                return Task.FromResult(acknowledge ? SubscriberClient.Reply.Ack : SubscriberClient.Reply.Nack);
+            });
+            // Run for 5 seconds.
+            await Task.Delay(5000);
+            await subscriber.StopAsync(CancellationToken.None);
 
             return Content(messageCount.ToString());
 
         }
 
-        public async void TranscriptionProcess(Movie m)//method that encapsulates all transcription process. Will run seperately to not interfere with pub sub delay
+        public async Task TranscriptionProcess(Movie m)//method that encapsulates all transcription process. Will run seperately to not interfere with pub sub delay
         {
             //Preparation for pt 1 - Convert to Flac
             var storage = StorageClient.Create();
