@@ -8,8 +8,9 @@
     <PackageReference Include="Google.Cloud.Firestore" Version="3.2.0" />
     <PackageReference Include="Google.Cloud.Firestore.V1" Version="3.2.0" />
     <PackageReference Include="Google.Cloud.Functions.Hosting" Version="2.0.0" />
-    <None Include="appsettings*.json" CopyToOutputDirectory="PreserveNewest" />
     <PackageReference Include="Google.Cloud.Speech.V1" Version="3.4.0" />
     <PackageReference Include="Google.Cloud.Storage.V1" Version="4.5.0" />
+    <PackageReference Include="Google.Events.Protobuf" Version="1.2.0" />
+    <None Include="appsettings*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

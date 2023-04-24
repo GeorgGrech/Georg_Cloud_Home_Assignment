@@ -1,9 +1,11 @@
+using CloudNative.CloudEvents;
 using Google.Cloud.Functions.Framework;
-using Microsoft.AspNetCore.Http;
-using System.Collections.Generic;
-using System.Collections;
+using Google.Events.Protobuf.Cloud.PubSub.V1;
+using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Google.Cloud.Firestore;
 using Google.Cloud.Firestore.V1;
 using Microsoft.Extensions.Logging;
@@ -11,44 +13,45 @@ using Google.Cloud.Speech.V1;
 using Google.Cloud.Storage.V1;
 using System.IO;
 
-namespace ToSrtFunction;
+namespace tosrtfunction;
 
-public class Function : IHttpFunction
+/// <summary>
+/// A function that can be triggered in responses to changes in Google Cloud Storage.
+/// The type argument (StorageObjectData in this case) determines how the event payload is deserialized.
+/// The function must be deployed so that the trigger matches the expected payload type. (For example,
+/// deploying a function expecting a StorageObject payload will not work for a trigger that provides
+/// a FirestoreEvent.)
+/// </summary>
+public class Function : ICloudEventFunction<MessagePublishedData>
 {
-    //Logging
+        //Logging
      ILogger<Function> _logger;
   public Function(ILogger<Function> logger) =>
     _logger = logger;
-
-    
-    /// <summary>
-    /// Logic for your function goes here.
-    /// </summary>
-    /// <param name="context">The HTTP context, containing the request and the response.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    public async Task HandleAsync(HttpContext context)
+    public Task HandleAsync(CloudEvent cloudEvent, MessagePublishedData data, CancellationToken cancellationToken)
     {
-        //await context.Response.WriteAsync("Hello, Functions Framework.");
-
-        //System.Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", "georg-cloud-home-assignment-37ae86e05b4c.json");
+        var id = data.Message?.TextData;
+        _logger.LogInformation($"Retrieved id: {id}");
 
         string projectId = "georg-cloud-home-assignment";
         FirestoreDb db = FirestoreDb.Create(projectId);
-
-        HttpRequest request = context.Request;
-        string id = request.Query["id"];
-        Movie m = await GetMovie(id,db);
-
+        _logger.LogInformation($"Connected with firestore");
 
         var storage = StorageClient.Create();
         string bucketName = "georg_movie_app_bucket";
 
+        Process(id,bucketName,storage,db).Wait();
+        //t.Wait();
+        
+        return Task.CompletedTask;
+    }
+
+    public async Task Process(string id, string bucketName, StorageClient storage, FirestoreDb db)
+    {
+        Movie m = await GetMovie(id,db);
 
         Stream transcriptionStream = Transcribe(m.FlacFileName, bucketName, storage); 
         UploadTranscription(transcriptionStream, bucketName, storage, m, db);
-
-        //await context.Response.WriteAsync($"Movie requested has these details: Name: {m.Name}, Audio File: {m.FlacFileName}");
-
     }
 
     public async Task<Movie> GetMovie(string id,FirestoreDb db)

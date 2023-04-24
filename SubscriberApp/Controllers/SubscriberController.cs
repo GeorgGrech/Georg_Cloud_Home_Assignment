@@ -13,12 +13,14 @@ using Google.Cloud.Storage.V1;
 using System.IO;
 using Google.Cloud.Firestore;
 using Grpc.Core;
+using Google.Protobuf;
 
 namespace SubscriberApp.Controllers
 {
     public class SubscriberController : Controller
     {
         IWebHostEnvironment Environment;
+        string projectId = "georg-cloud-home-assignment";
         public SubscriberController(IWebHostEnvironment environment)
         {
             Environment = environment;
@@ -56,6 +58,7 @@ namespace SubscriberApp.Controllers
                 // If acknowledgement required, send to server.
                 if (acknowledge && messageCount > 0)
                 {
+                    Console.WriteLine("Attempting Acknowledge");
                     subscriberClient.Acknowledge(subscriptionName, response.ReceivedMessages.Select(msg => msg.AckId));
                 }
             }
@@ -87,7 +90,6 @@ namespace SubscriberApp.Controllers
             };
 
             //Preperation for pt 3 - Upload Transcription
-            string projectId = "georg-cloud-home-assignment";
             FirestoreDb db = FirestoreDb.Create(projectId);
 
             try
@@ -95,15 +97,14 @@ namespace SubscriberApp.Controllers
                 string flacFileName = await ConvertAndUploadFlac(m.LinkToMovie, bucketName, storage); //Convert, upload Flac, and retrieve file name
                 m.FlacFileName = flacFileName;
                 UpdateFirestore(m, db);
-
-                Redirect("https://us-central1-georg-cloud-home-assignment.cloudfunctions.net/transcribe-srt-function?id=" + m.Id);
+                PushMessage(m.Id);
+                
             }
             catch (Exception e)
             {
                 Console.WriteLine("Transcription unsuccseful. Object most likely deleted. Exception: "+e);
             }
         }
-
 
 
         public async Task<string> ConvertAndUploadFlac(string inputUrl, string bucketName, StorageClient storage)
@@ -122,57 +123,6 @@ namespace SubscriberApp.Controllers
             return flacFileName;
         }
 
-        public Stream Transcribe(string flacFileName, string bucketName, SpeechClient speech, RecognitionConfig config, StorageClient storage)
-        {
-            var audio = RecognitionAudio.FromStorageUri($"gs://{bucketName}/{flacFileName}");
-            var response = speech.Recognize(config, audio);
-
-            var stream = new MemoryStream();
-            var writer = new StreamWriter(stream);
-
-            string transcription = "";
-
-            int lineNumber = 0;
-
-            foreach (var result in response.Results)
-            {
-                foreach (var alternative in result.Alternatives)
-                {
-                    lineNumber++;
-
-                    string lineStartTime = alternative.Words[0].StartTime.ToString();
-                    string lineEndTime = alternative.Words[^1].EndTime.ToString();
-
-                    transcription += lineNumber.ToString()+"\n";
-                    transcription += convertToSrtTime(lineStartTime,false) + " --> " + convertToSrtTime(lineEndTime,true) + "\n";
-                    //Console.WriteLine(alternative.Transcript);
-                    transcription += alternative.Transcript + "\n";
-                    transcription += "\n"; //Skip extra line
-
-                }
-            }
-
-            writer.Write(transcription);
-            writer.Flush();
-            stream.Position = 0;
-
-            storage.DeleteObject(bucketName,flacFileName); //Delete now unnecessary flac file
-
-            return stream;
-        }
-
-
-        public async void UploadTranscription(Stream transcriptionStream, string bucketName, StorageClient storage, Movie m, FirestoreDb db)
-        {
-
-            string transcriptFileName = m.Id + ".srt";
-
-            await storage.UploadObjectAsync("georg_movie_app_bucket", transcriptFileName, null, transcriptionStream);
-
-            m.LinkToTranscription = $"https://storage.googleapis.com/{bucketName}/{transcriptFileName}";
-
-            UpdateFirestore(m, db);
-        }
 
         public async void UpdateFirestore(Movie m, FirestoreDb db)
         {
@@ -184,36 +134,13 @@ namespace SubscriberApp.Controllers
             await docRef.SetAsync(m);
         }
 
-
-
-        private string convertToSrtTime(string time, bool endTime) //Convert Google Speech StartTime/EndTime into srt format
+        public async void PushMessage(string id)
         {
-            int trailTime = 1; //Amount of seconds subtitle remains on screen after speech finished
-
-            string srtTime = time.Replace("\"", string.Empty).Replace("s", string.Empty); //Removes quotation marks and s
-
-
-            string[] times = srtTime.Split(".");
-            int seconds = int.Parse(times[0]); //Current system only works with seconds, consider rework
-
-            if (endTime)
-                seconds += trailTime;
-
-            if (seconds < 10)
-            {
-                times[0] = "0" + seconds;
-            }
-            else
-            {
-                times[0] = seconds.ToString();
-            }
-
-            if (times.Length > 1) //If milliseconds available
-                srtTime = "00:00:" + times[0] + "," + times[1];
-            else //if no milliseconds found, e.g time variable is "1s"
-                srtTime = "00:00:" + times[0] + ",000"; 
-
-            return srtTime;
+            TopicName topicName = TopicName.FromProjectTopic(projectId, "to-srt-queue");
+            PublisherClient publisher = await PublisherClient.CreateAsync(topicName);
+            
+            await publisher.PublishAsync(id); //the message (reservation as json string) will be published onto the queue
         }
+
     }
 }
