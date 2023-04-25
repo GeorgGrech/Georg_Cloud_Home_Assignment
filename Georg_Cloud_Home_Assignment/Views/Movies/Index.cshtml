@@ -31,11 +31,19 @@
                 @Html.DisplayFor(modelItem => item.Name)
             </td>
             <td>
-                @Html.ActionLink("Edit", "Edit", new { /* id=item.PrimaryKey */ }) |
-                @Html.ActionLink("Details", "Details", new { /* id=item.PrimaryKey */ }) |
                 @Html.ActionLink("Delete", "Delete", new { id = item.Id }) |
                 @Html.ActionLink("Download Movie", "DownloadMovie", new { id = item.Id }) |
-                <a href="@item.LinkToTranscription">Download Transcription</a>
+
+                @if (item.LinkToTranscription == null)
+                {
+                    <span>Status: <b>Awaiting Transcription</b></span>
+                }
+
+                else
+                {
+                    <span>Status: <b>Transcription Complete</b> |</span>
+                    <a href="@item.LinkToTranscription">Download Transcription</a>
+                }
             </td> 
         </tr>
 }
