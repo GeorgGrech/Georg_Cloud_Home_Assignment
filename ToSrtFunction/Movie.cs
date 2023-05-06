@@ -32,6 +32,9 @@ namespace tosrtfunction
         [FirestoreProperty]
         public List<Timestamp> DownloadTimes { get; set; }
 
+        [FirestoreProperty]
+        public string Status { get; set; }
+
     }
 
 }

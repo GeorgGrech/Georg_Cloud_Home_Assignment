@@ -36,13 +36,12 @@ namespace Georg_Cloud_Home_Assignment.Controllers
         [Authorize]
         public IActionResult Create()
         {
-            TempData["progress"] = null;
             return View();
         }
 
         [HttpPost]
         [Authorize]
-        public async Task<IActionResult> CreateAsync(Movie m, IFormFile file)
+        public async Task<IActionResult> CreateAsync(Movie m, IFormFile file, IFormFile thumbnailFile)
         {
             try
             {
@@ -58,17 +57,14 @@ namespace Georg_Cloud_Home_Assignment.Controllers
 
                     newFilename = GuidName + Path.GetExtension(file.FileName);
 
-
-                    uploadMax = fileStream.Length; //Set max to calculate progress bar percentage
-                    var progressReporter = new Progress<Google.Apis.Upload.IUploadProgress>(OnUploadProgress);
-
                     //Upload movie
-                    await storage.UploadObjectAsync("georg_movie_app_bucket", newFilename, null, fileStream, progress: progressReporter);
+                    await storage.UploadObjectAsync("georg_movie_app_bucket", newFilename, null, fileStream);
 
                     m.LinkToMovie = $"https://storage.googleapis.com/{"georg_movie_app_bucket"}/{newFilename}";
 
                     //Generate thumbnail
-                    Stream tnStream = GenerateThumbnailStream(m.LinkToMovie);
+                    //Stream tnStream = GenerateThumbnailStream(m.LinkToMovie);
+                    Stream tnStream = thumbnailFile.OpenReadStream();
 
                     //Upload thumbnail
                     string tnFileName = GuidName + "_tn.png";
@@ -76,6 +72,8 @@ namespace Georg_Cloud_Home_Assignment.Controllers
                     m.LinkToThumbnail = $"https://storage.googleapis.com/{"georg_movie_app_bucket"}/{tnFileName}";
 
                     m.DownloadTimes = new List<Timestamp>(); //Create an empty list
+
+                    m.Status = "Awaiting Transcription"; 
                 }
 
 
@@ -130,6 +128,7 @@ namespace Georg_Cloud_Home_Assignment.Controllers
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex);
                 TempData["error"] = "Movie was not deleted";
             }
 
@@ -137,49 +136,14 @@ namespace Georg_Cloud_Home_Assignment.Controllers
 
         }
 
-        void OnUploadProgress(Google.Apis.Upload.IUploadProgress progress)
-        {
-            switch (progress.Status)
-            {
-                case Google.Apis.Upload.UploadStatus.Starting:
-                    //ProgressBar.Minimum = 0;
-                    TempData["progressinfo"] = "Starting upload...";
-                    TempData["progress"] = 0;
-
-                    break;
-                case Google.Apis.Upload.UploadStatus.Completed:
-                    TempData["progressinfo"] = "Upload complete!";
-                    TempData["progress"] = 100;
-                    //System.Windows.MessageBox.Show("Upload completed"); //Set as TempData later
-
-                    break;
-                case Google.Apis.Upload.UploadStatus.Uploading:
-                    TempData["progressinfo"] = "Uploading file...";
-                    UpdateProgressBar(progress.BytesSent);
-
-                    break;
-                case Google.Apis.Upload.UploadStatus.Failed:
-                    TempData["progressinfo"] = "Upload failed.";
-                    /*System.Windows.MessageBox.Show("Upload failed"
-                                                   + Environment.NewLine
-                                                   + progress.Exception);*/
-                    break;
-            }
-        }
-
-        void UpdateProgressBar(long value)
-        {
-            TempData["progress"] = (value/uploadMax)*100;
-        }
-
-        Stream GenerateThumbnailStream(string filePath)
+        /*Stream GenerateThumbnailStream(string filePath)
         {
             Stream tnStream = new MemoryStream();
             var ffMpeg = new NReco.VideoConverter.FFMpegConverter();
             ffMpeg.GetVideoThumbnail(filePath, tnStream);
             return tnStream;
             //System.IO.File.Delete(filePath); //Delete now unneeded file from path
-        }
+        }*/
 
         public async Task<IActionResult> DownloadMovie(string id)
         {
@@ -195,6 +159,7 @@ namespace Georg_Cloud_Home_Assignment.Controllers
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex);
                 TempData["error"] = "Download time was not added";
             }
 

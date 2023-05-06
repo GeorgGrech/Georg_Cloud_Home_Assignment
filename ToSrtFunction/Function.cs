@@ -133,6 +133,7 @@ public class Function : ICloudEventFunction<MessagePublishedData>
 
         m.LinkToTranscription = $"https://storage.googleapis.com/{bucketName}/{transcriptFileName}";
         m.FlacFileName = null; //Delete FlacFileName
+        m.Status = "Transcription Complete";
 
         UpdateFirestore(m, db);
     }

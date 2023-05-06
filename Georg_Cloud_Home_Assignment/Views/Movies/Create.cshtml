@@ -8,24 +8,21 @@
 <h4>Movie will be transcribed</h4>
 <hr />
 
-@if (TempData["progress"] != null)
-{
-    <div id="progressBarContainer">
-        <p>
-            @TempData["progressInfo"]
-        </p>
-        <input id="percentagevalue" type="hidden" value="@(TempData["progress"])">
-        <div id="progressbar"></div>
-        <hr />
+<div id="progressBarContainer" style="display: none;">
+    <span id="uploadStatus">Uploading...</span>
+    <div class="progress mt-3" id="progressBar">
+        <br />
+        <div class="progress-bar" role="progressbar" style="width: 0%;" id="progressValue"></div>
     </div>
-}
+    <br />
+</div>
 
 
 
 
 <div class="row">
     <div class="col-md-4">
-        <form asp-action="Create" enctype="multipart/form-data">
+        <form id="submitForm" asp-action="Create" enctype="multipart/form-data" onsubmit="return uploadFile(event)">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <div class="form-group">
                 <label asp-for="Name" class="control-label"></label>
@@ -35,6 +32,10 @@
             <div class="form-group">
                 <label class="control-label">Upload Movie</label>
                 <input type="file" name="file" class="form-control" />
+            </div>
+            <div class="form-group">
+                <label class="control-label">Upload Thumbnail</label>
+                <input type="file" name="thumbnailFile" class="form-control" />
             </div>
             <div class="form-group">
                 <input type="submit" value="Create" class="btn btn-primary" />
@@ -50,15 +51,42 @@
 
 @section Scripts
 {
-    <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
-    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
     <script>
-        $(function () {
-            $("#progressbar").progressbar({
-                //value: parseInt($('#percentagevalue').val())
-                value: parseInt($('#percentagevalue').val())
+        function uploadFile(event) {
+            event.preventDefault(); //Stop form from regular submit
+
+
+            const form = $('#submitForm')[0]; //Get form data
+            const formData = new FormData(form);
+
+            $('#progressBarContainer').show(); //Show progress bar and status
+            $("#uploadStatus").text("Uploading...") 
+            $("#progressValue").addClass("progress-bar-striped progress-bar-animated"); //Set animation
+
+            $.ajax({
+                url: form.action,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                xhr: function () {
+                    const xhr = new window.XMLHttpRequest();
+                    xhr.upload.addEventListener("progress", function (event) {
+                        if (event.lengthComputable) {
+                            const percentComplete = Math.round((event.loaded / event.total) * 100); //Calculate percentage done by method
+                            $('#progressValue').css('width', percentComplete + '%');
+                        }
+                    }, false);
+                    return xhr;
+                },
+                success: function (response) {
+                    $("#progressValue").removeClass("progress-bar-striped progress-bar-animated"); //Remove animation
+                    $("#uploadStatus").text("Upload Complete!"); //Set upload complete status
+                    $('#submitForm')[0].reset(); //Reset form
+                }
             });
-        });
+        }
     </script>
 }

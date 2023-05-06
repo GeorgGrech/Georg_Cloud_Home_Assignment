@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,7 +21,7 @@ namespace Georg_Cloud_Home_Assignment
     {
         public Startup(IConfiguration configuration, IWebHostEnvironment host)
         {
-            System.Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", host.ContentRootPath + "\\georg-cloud-home-assignment-37ae86e05b4c.json");
+            System.Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", host.ContentRootPath + "/georg-cloud-home-assignment-37ae86e05b4c.json");
             Configuration = configuration;
         }
 
@@ -31,6 +32,15 @@ namespace Georg_Cloud_Home_Assignment
         {
             string project = Configuration["project"];
             //oauth_secretket
+            services.Configure<CookiePolicyOptions>(options =>
+            {
+                options.MinimumSameSitePolicy = SameSiteMode.Unspecified;
+                options.OnAppendCookie = cookieContext =>
+                    CheckSameSite(cookieContext.Context, cookieContext.CookieOptions);
+                options.OnDeleteCookie = cookieContext =>
+                    CheckSameSite(cookieContext.Context, cookieContext.CookieOptions);
+            });
+
 
             // Create the client.
             SecretManagerServiceClient client = SecretManagerServiceClient.Create();
@@ -88,6 +98,7 @@ namespace Georg_Cloud_Home_Assignment
 
             app.UseRouting();
 
+            app.UseCookiePolicy(); // Before UseAuthentication or anything else that writes cookies.
             app.UseAuthentication();
             app.UseAuthorization();
 
@@ -97,6 +108,20 @@ namespace Georg_Cloud_Home_Assignment
                     name: "default",
                     pattern: "{controller=Home}/{action=Index}/{id?}");
             });
+        }
+
+        private void CheckSameSite(HttpContext httpContext, CookieOptions options)
+        {
+            if (options.SameSite == SameSiteMode.None)
+            {
+                var userAgent = httpContext.Request.Headers["User-Agent"].ToString();
+                // TODO: Use your User Agent library of choice here.
+                if (true)
+                {
+                    // For .NET Core < 3.1 set SameSite = (SameSiteMode)(-1)
+                    options.SameSite = SameSiteMode.Unspecified;
+                }
+            }
         }
     }
 }

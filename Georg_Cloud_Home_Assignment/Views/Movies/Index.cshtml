@@ -33,16 +33,10 @@
             <td>
                 @Html.ActionLink("Delete", "Delete", new { id = item.Id }) |
                 @Html.ActionLink("Download Movie", "DownloadMovie", new { id = item.Id }) |
-
-                @if (item.LinkToTranscription == null)
+                <span>Status: <b>@item.Status</b></span>
+                @if (item.LinkToTranscription != null)
                 {
-                    <span>Status: <b>Awaiting Transcription</b></span>
-                }
-
-                else
-                {
-                    <span>Status: <b>Transcription Complete</b> |</span>
-                    <a href="@item.LinkToTranscription">Download Transcription</a>
+            <span> | </span><a href="@item.LinkToTranscription">Download Transcription</a>
                 }
             </td> 
         </tr>
