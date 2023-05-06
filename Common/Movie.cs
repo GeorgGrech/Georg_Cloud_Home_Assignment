@@ -30,6 +30,12 @@ namespace Common.Models
         public string LinkToTranscription { get; set; } //Link to bucket
 
         [FirestoreProperty]
+        public string UploaderName { get; set; } //Link to bucket
+
+        [FirestoreProperty]
+        public Timestamp UploadTime { get; set; }
+
+        [FirestoreProperty]
         public List<Timestamp> DownloadTimes { get; set; }
 
         [FirestoreProperty]

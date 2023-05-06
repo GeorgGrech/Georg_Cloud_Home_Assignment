@@ -57,6 +57,10 @@ namespace Georg_Cloud_Home_Assignment.Controllers
 
                     newFilename = GuidName + Path.GetExtension(file.FileName);
 
+                    m.UploadTime = Timestamp.FromDateTime(DateTime.UtcNow);
+
+                    m.UploaderName = User.Identity.Name;
+
                     //Upload movie
                     await storage.UploadObjectAsync("georg_movie_app_bucket", newFilename, null, fileStream);
 
